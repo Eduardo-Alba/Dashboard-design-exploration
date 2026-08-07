@@ -37,7 +37,8 @@ export function UserFormModal({ open, onClose }: { open: boolean; onClose: () =>
       return
     }
 
-    showToast('success', 'Usuario creado')
+    const { tempPassword } = await res.json()
+    showToast('success', `Usuario creado. Contraseña temporal: ${tempPassword}`)
     setFullName('')
     setEmail('')
     setRole('CAJERO')

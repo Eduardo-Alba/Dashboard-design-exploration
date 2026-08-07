@@ -54,5 +54,5 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: 'No se pudo crear el perfil del usuario.' }), { status: 400 })
   }
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  return new Response(JSON.stringify({ ok: true, tempPassword }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }
