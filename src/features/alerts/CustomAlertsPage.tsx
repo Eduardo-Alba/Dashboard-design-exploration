@@ -195,13 +195,18 @@ export function CustomAlertsPage() {
             </div>
           </div>
 
-          <Input
-            label="Mensaje personalizado (opcional)"
-            placeholder='Ej. "Cuidado, tu saldo bajó a {valor}"'
-            value={customMessage}
-            onChange={(e) => setCustomMessage(e.target.value)}
-          />
-          <p className="-mt-2.5 text-[12px] text-ph">Usa <code>{'{valor}'}</code> para insertar el número calculado. Si lo dejas vacío, se genera un mensaje automático.</p>
+          <div>
+            <Input
+              label="Mensaje personalizado (opcional)"
+              placeholder="Ej. Cuidado, tu saldo bajó"
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+            />
+            <div className="-mt-2.5 flex items-center gap-2">
+              <Chip onClick={() => setCustomMessage((m) => `${m}{valor}`)}>+ Insertar valor calculado</Chip>
+              <span className="text-[12px] text-ph">Si lo dejas vacío, se genera un mensaje automático.</span>
+            </div>
+          </div>
 
           <Button onClick={onSubmit} disabled={isSaving || !label.trim() || !threshold}>
             {isSaving ? 'Creando…' : 'Crear alerta'}
