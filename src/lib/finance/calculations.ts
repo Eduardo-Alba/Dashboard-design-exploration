@@ -1,5 +1,15 @@
 import { EXPENSE_CATEGORIES } from '@/lib/constants/categories'
-import type { AccountEntry, AlertConfig, Budget, Business, CustomAlert, CustomAlertComparator, CustomAlertModule, Transaction } from '@/types/domain'
+import type {
+  AccountEntry,
+  AlertConfig,
+  Budget,
+  Business,
+  CustomAlert,
+  CustomAlertComparator,
+  CustomAlertModule,
+  CustomAlertSeverity,
+  Transaction,
+} from '@/types/domain'
 
 export type Period = 'hoy' | 'semana' | 'mes' | 'todo'
 
@@ -169,6 +179,8 @@ export interface ActiveCustomAlert {
   id: string
   label: string
   action: 'AVISAR' | 'RECORDAR'
+  severity: CustomAlertSeverity
+  message: string
 }
 
 /**
@@ -182,6 +194,18 @@ export const CUSTOM_ALERT_MODULE_COMPARATORS: Record<CustomAlertModule, CustomAl
   CUENTAS_POR_PAGAR: ['MENOR_QUE', 'MAYOR_QUE'],
   PRESUPUESTO_CONSUMIDO: ['MAYOR_QUE'],
   INGRESOS_HOY: ['MENOR_QUE'],
+}
+
+const CUSTOM_ALERT_MODULE_SUFFIX: Record<CustomAlertModule, string> = {
+  SALDO: 'RD$',
+  CUENTAS_POR_COBRAR: 'RD$',
+  CUENTAS_POR_PAGAR: 'RD$',
+  PRESUPUESTO_CONSUMIDO: '%',
+  INGRESOS_HOY: 'RD$',
+}
+
+function formatCustomAlertValue(module: CustomAlertModule, value: number): string {
+  return module === 'PRESUPUESTO_CONSUMIDO' ? Math.round(value).toString() : value.toFixed(2)
 }
 
 /** Modulo experimental (ver AlertsPage): evalua las reglas dinamicas creadas por el usuario. */
@@ -221,7 +245,13 @@ export function evaluateCustomAlerts(
       const value = valueByModule[c.module]
       return c.comparator === 'MENOR_QUE' ? value < c.threshold : value > c.threshold
     })
-    .map((c) => ({ id: c.id, label: c.label, action: c.action }))
+    .map((c) => {
+      const formattedValue = formatCustomAlertValue(c.module, valueByModule[c.module])
+      const message = c.custom_message
+        ? c.custom_message.replaceAll('{valor}', formattedValue)
+        : `${c.label}: valor actual ${formattedValue}${CUSTOM_ALERT_MODULE_SUFFIX[c.module]}`
+      return { id: c.id, label: c.label, action: c.action, severity: c.severity, message }
+    })
 }
 
 /** Desglose de gastos por categoría del periodo, para la gráfica de dona y el reporte. */

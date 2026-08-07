@@ -21,6 +21,7 @@ export type AlertChannel = 'EMAIL' | 'WHATSAPP' | 'IN_APP'
 export type CustomAlertModule = 'SALDO' | 'CUENTAS_POR_COBRAR' | 'CUENTAS_POR_PAGAR' | 'PRESUPUESTO_CONSUMIDO' | 'INGRESOS_HOY'
 export type CustomAlertComparator = 'MENOR_QUE' | 'MAYOR_QUE'
 export type CustomAlertAction = 'AVISAR' | 'RECORDAR'
+export type CustomAlertSeverity = 'INFO' | 'ADVERTENCIA' | 'CRITICA'
 
 export interface Business {
   id: string
@@ -83,7 +84,12 @@ export interface CustomAlert {
   comparator: CustomAlertComparator
   threshold: number
   action: CustomAlertAction
+  severity: CustomAlertSeverity
+  channels: AlertChannel[]
+  custom_message: string | null
   is_active: boolean
+  was_triggered: boolean
+  dismissed: boolean
   created_at: string
 }
 
