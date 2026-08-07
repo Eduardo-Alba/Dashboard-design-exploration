@@ -1,6 +1,6 @@
-# FinanZen — Brief Completo para Prototipo en Claude Design
+# FinanZen — Brief Completo para Prototipo
 
-> **Instrucción para Claude Design:** Construye un prototipo PWA **funcional e interactivo** (Mobile-First, también responsive a desktop) basándote 100% en este documento. Usa datos de ejemplo (mock) para que todo se vea "vivo". La navegación entre pantallas debe funcionar. Aplica la paleta de colores exacta. Prioriza las pantallas marcadas como ⭐ CRÍTICA.
+> **Instrucción de diseño:** Construye un prototipo PWA **funcional e interactivo** (Mobile-First, también responsive a desktop) basándote 100% en este documento. Usa datos de ejemplo (mock) para que todo se vea "vivo". La navegación entre pantallas debe funcionar. Aplica la paleta de colores exacta. Prioriza las pantallas marcadas como ⭐ CRÍTICA.
 
 ---
 
