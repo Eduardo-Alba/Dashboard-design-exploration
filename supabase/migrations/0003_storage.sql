@@ -13,5 +13,5 @@ create policy receipts_select on storage.objects for select using (
 create policy receipts_insert on storage.objects for insert with check (
   bucket_id = 'receipts'
   and (storage.foldername(name))[1] = current_business_id()::text
-  and current_role() in ('ADMIN','CAJERO')
+  and current_user_role() in ('ADMIN','CAJERO')
 );

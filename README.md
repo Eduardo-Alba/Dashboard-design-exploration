@@ -1,32 +1,37 @@
-# React + TypeScript + Vite
+# FinanZen
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+PWA de gestión financiera para micro y pequeños negocios dominicanos. React + Vite + TypeScript + Tailwind, Supabase (PostgreSQL, Auth, Realtime, Storage), desplegado en Vercel.
 
-Currently, two official plugins are available:
+## Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **URL**: (pendiente de desplegar en Vercel)
+- **Usuario**: `ali@colmado.com`
+- **Contraseña**: `FinanZen2026!`
+- Rol: Administrador — acceso completo (dashboard, transacciones, presupuestos, alertas, cuentas por cobrar/pagar, reportes, usuarios, configuración).
+- También existen `carlos@colmado.com` (Cajero, activo) y `maria@colmado.com` (Cajero, inactivo) con la misma contraseña, para probar los permisos por rol.
 
-## React Compiler
+## Desarrollo local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+cp .env.example .env.local   # completa con tu proyecto Supabase
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Backend (Supabase)
+
+Migraciones en `supabase/migrations/`, en orden:
+1. `0001_schema.sql` — tablas y enums
+2. `0002_rls_policies.sql` — Row Level Security (aislamiento por negocio + rol)
+3. `0003_storage.sql` — bucket de comprobantes
+4. `0004_realtime.sql` — habilita Realtime en las tablas que lo necesitan (patrón Observer)
+5. `0005_function_grants.sql` + `0006_function_grants_fix.sql` — cierra el acceso público a las funciones helper de RLS
+
+Datos de demo en `supabase/seed/seed.sql`. Los 3 usuarios de Auth (`ali@colmado.com`, `carlos@colmado.com`, `maria@colmado.com`) deben existir en `auth.users` **antes** de correr el seed, porque `profiles` referencia sus IDs — ver `supabase/seed/seed-auth-user.md`.
+
+## Scripts
+
+- `npm run dev` — servidor local
+- `npm run build` — build de producción
+- `npm run test` — pruebas (Vitest)
+- `npm run typecheck` — chequeo de tipos
