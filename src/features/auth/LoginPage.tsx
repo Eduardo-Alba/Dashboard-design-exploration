@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Eye, EyeOff, Wallet as LogoIcon } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
+import { setRememberSession } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -30,6 +31,7 @@ export function LoginPage() {
       return
     }
     setIsSubmitting(true)
+    setRememberSession(remember)
     const { error } = await signIn(email.trim(), password)
     setIsSubmitting(false)
     if (error) setSubmitError(error)
