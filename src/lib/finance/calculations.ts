@@ -196,7 +196,7 @@ export const CUSTOM_ALERT_MODULE_COMPARATORS: Record<CustomAlertModule, CustomAl
   INGRESOS_HOY: ['MENOR_QUE'],
 }
 
-const CUSTOM_ALERT_MODULE_SUFFIX: Record<CustomAlertModule, string> = {
+export const CUSTOM_ALERT_MODULE_SUFFIX: Record<CustomAlertModule, string> = {
   SALDO: 'RD$',
   CUENTAS_POR_COBRAR: 'RD$',
   CUENTAS_POR_PAGAR: 'RD$',

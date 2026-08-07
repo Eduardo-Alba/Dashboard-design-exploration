@@ -15,7 +15,7 @@ import { useBudgetsStore } from '@/store/useBudgetsStore'
 import { useAccountsStore } from '@/store/useAccountsStore'
 import { useCustomAlertsStore } from '@/store/useCustomAlertsStore'
 import { useUIStore } from '@/store/useUIStore'
-import { CUSTOM_ALERT_MODULE_COMPARATORS, evaluateCustomAlerts } from '@/lib/finance/calculations'
+import { CUSTOM_ALERT_MODULE_COMPARATORS, CUSTOM_ALERT_MODULE_SUFFIX, evaluateCustomAlerts } from '@/lib/finance/calculations'
 import type {
   AlertChannel,
   CustomAlertAction,
@@ -24,12 +24,12 @@ import type {
   CustomAlertSeverity,
 } from '@/types/domain'
 
-const MODULE_META: Record<CustomAlertModule, { label: string; valueLabel: string; suffix: string }> = {
-  SALDO: { label: 'Saldo', valueLabel: 'Saldo', suffix: 'RD$' },
-  CUENTAS_POR_COBRAR: { label: 'Cuentas por Cobrar', valueLabel: 'Total por Cobrar', suffix: 'RD$' },
-  CUENTAS_POR_PAGAR: { label: 'Cuentas por Pagar', valueLabel: 'Total por Pagar', suffix: 'RD$' },
-  PRESUPUESTO_CONSUMIDO: { label: 'Presupuesto Consumido', valueLabel: '% Consumido (el más alto del mes)', suffix: '%' },
-  INGRESOS_HOY: { label: 'Ingresos de Hoy', valueLabel: 'Ingresos de hoy', suffix: 'RD$' },
+const MODULE_META: Record<CustomAlertModule, { label: string; valueLabel: string }> = {
+  SALDO: { label: 'Saldo', valueLabel: 'Saldo' },
+  CUENTAS_POR_COBRAR: { label: 'Cuentas por Cobrar', valueLabel: 'Total por Cobrar' },
+  CUENTAS_POR_PAGAR: { label: 'Cuentas por Pagar', valueLabel: 'Total por Pagar' },
+  PRESUPUESTO_CONSUMIDO: { label: 'Presupuesto Consumido', valueLabel: '% Consumido (el más alto del mes)' },
+  INGRESOS_HOY: { label: 'Ingresos de Hoy', valueLabel: 'Ingresos de hoy' },
 }
 const MODULES = Object.keys(MODULE_META) as CustomAlertModule[]
 const COMPARATOR_LABEL: Record<CustomAlertComparator, string> = { MENOR_QUE: 'Es menor que', MAYOR_QUE: 'Es mayor que' }
@@ -154,7 +154,7 @@ export function CustomAlertsPage() {
           </div>
 
           <Input
-            label={`${MODULE_META[module].valueLabel} (${MODULE_META[module].suffix})`}
+            label={`${MODULE_META[module].valueLabel} (${CUSTOM_ALERT_MODULE_SUFFIX[module]})`}
             type="number"
             placeholder="0.00"
             value={threshold}
@@ -233,7 +233,7 @@ export function CustomAlertsPage() {
                       {showAsActive && <Badge variant={SEVERITY_BADGE[a.severity]}>Activa ahora</Badge>}
                     </div>
                     <div className="text-[12px] text-sec">
-                      {MODULE_META[a.module].label} · {COMPARATOR_LABEL[a.comparator]} {MODULE_META[a.module].suffix}
+                      {MODULE_META[a.module].label} · {COMPARATOR_LABEL[a.comparator]} {CUSTOM_ALERT_MODULE_SUFFIX[a.module]}
                       {a.threshold} · {a.action === 'AVISAR' ? 'Avisar' : 'Recordar'}
                     </div>
                     {showAsActive && active && <div className="mt-1 text-[12.5px] text-text">{active.message}</div>}
