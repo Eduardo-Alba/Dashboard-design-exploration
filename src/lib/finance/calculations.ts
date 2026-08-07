@@ -1,5 +1,5 @@
 import { EXPENSE_CATEGORIES } from '@/lib/constants/categories'
-import type { AccountEntry, AlertConfig, Budget, Business, Transaction } from '@/types/domain'
+import type { AccountEntry, AlertConfig, Budget, Business, CustomAlert, Transaction } from '@/types/domain'
 
 export type Period = 'hoy' | 'semana' | 'mes' | 'todo'
 
@@ -163,6 +163,37 @@ export function evaluateAlerts(
   }
 
   return alerts
+}
+
+export interface ActiveCustomAlert {
+  id: string
+  label: string
+  action: 'AVISAR' | 'RECORDAR'
+}
+
+/** Modulo experimental (ver AlertsPage): evalua las reglas dinamicas creadas por el usuario. */
+export function evaluateCustomAlerts(
+  customAlerts: CustomAlert[],
+  business: Business,
+  allTransactions: Transaction[],
+  accounts: AccountEntry[],
+): ActiveCustomAlert[] {
+  const saldo = calcSaldoTotal(business, allTransactions)
+  const porCobrar = accounts
+    .filter((a) => a.direction === 'COBRAR' && a.status !== 'PAGADO')
+    .reduce((acc, a) => acc + a.amount, 0)
+  const porPagar = accounts
+    .filter((a) => a.direction === 'PAGAR' && a.status !== 'PAGADO')
+    .reduce((acc, a) => acc + a.amount, 0)
+  const valueByModule = { SALDO: saldo, CUENTAS_POR_COBRAR: porCobrar, CUENTAS_POR_PAGAR: porPagar }
+
+  return customAlerts
+    .filter((c) => c.is_active)
+    .filter((c) => {
+      const value = valueByModule[c.module]
+      return c.comparator === 'MENOR_QUE' ? value < c.threshold : value > c.threshold
+    })
+    .map((c) => ({ id: c.id, label: c.label, action: c.action }))
 }
 
 /** Desglose de gastos por categoría del periodo, para la gráfica de dona y el reporte. */

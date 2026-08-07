@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Bell, Moon, Plus, Settings, Sun } from 'lucide-react'
+import { Bell, BellPlus, Moon, Plus, Settings, Sun } from 'lucide-react'
 import { NAV_ITEMS } from './navConfig'
 import { useUIStore } from '@/store/useUIStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -48,6 +48,17 @@ export function Topbar() {
         >
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
+        {role === 'ADMIN' && (
+          <button
+            type="button"
+            onClick={() => navigate('/alertas-experimental')}
+            title="Alertas personalizadas (experimental)"
+            aria-label="Alertas personalizadas (experimental)"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-text cursor-pointer"
+          >
+            <BellPlus size={18} />
+          </button>
+        )}
         {role === 'ADMIN' && (
           <button
             type="button"
