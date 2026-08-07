@@ -18,7 +18,7 @@ export type AccountStatus = 'PENDIENTE' | 'PAGADO' | 'VENCIDA'
 export type AlertType = 'PRESUPUESTO' | 'BALANCE' | 'MESES_NEG' | 'DEUDA' | 'INGRESO_BAJO'
 export type AlertChannel = 'EMAIL' | 'WHATSAPP' | 'IN_APP'
 
-export type CustomAlertModule = 'SALDO' | 'CUENTAS_POR_COBRAR' | 'CUENTAS_POR_PAGAR'
+export type CustomAlertModule = 'SALDO' | 'CUENTAS_POR_COBRAR' | 'CUENTAS_POR_PAGAR' | 'PRESUPUESTO_CONSUMIDO' | 'INGRESOS_HOY'
 export type CustomAlertComparator = 'MENOR_QUE' | 'MAYOR_QUE'
 export type CustomAlertAction = 'AVISAR' | 'RECORDAR'
 

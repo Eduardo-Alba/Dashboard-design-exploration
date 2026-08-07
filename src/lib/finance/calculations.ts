@@ -1,5 +1,5 @@
 import { EXPENSE_CATEGORIES } from '@/lib/constants/categories'
-import type { AccountEntry, AlertConfig, Budget, Business, CustomAlert, Transaction } from '@/types/domain'
+import type { AccountEntry, AlertConfig, Budget, Business, CustomAlert, CustomAlertComparator, CustomAlertModule, Transaction } from '@/types/domain'
 
 export type Period = 'hoy' | 'semana' | 'mes' | 'todo'
 
@@ -171,13 +171,28 @@ export interface ActiveCustomAlert {
   action: 'AVISAR' | 'RECORDAR'
 }
 
+/**
+ * Comparadores validos por modulo (logica de negocio real de cada uno, no un generico
+ * menor/mayor para todos): un % de presupuesto consumido solo alerta si SE PASA de un umbral
+ * (nunca "menor que"), un ingreso bajo solo alerta si CAE por debajo (nunca "mayor que").
+ */
+export const CUSTOM_ALERT_MODULE_COMPARATORS: Record<CustomAlertModule, CustomAlertComparator[]> = {
+  SALDO: ['MENOR_QUE', 'MAYOR_QUE'],
+  CUENTAS_POR_COBRAR: ['MENOR_QUE', 'MAYOR_QUE'],
+  CUENTAS_POR_PAGAR: ['MENOR_QUE', 'MAYOR_QUE'],
+  PRESUPUESTO_CONSUMIDO: ['MAYOR_QUE'],
+  INGRESOS_HOY: ['MENOR_QUE'],
+}
+
 /** Modulo experimental (ver AlertsPage): evalua las reglas dinamicas creadas por el usuario. */
 export function evaluateCustomAlerts(
   customAlerts: CustomAlert[],
   business: Business,
   allTransactions: Transaction[],
+  budgets: Budget[],
   accounts: AccountEntry[],
 ): ActiveCustomAlert[] {
+  const now = new Date()
   const saldo = calcSaldoTotal(business, allTransactions)
   const porCobrar = accounts
     .filter((a) => a.direction === 'COBRAR' && a.status !== 'PAGADO')
@@ -185,10 +200,23 @@ export function evaluateCustomAlerts(
   const porPagar = accounts
     .filter((a) => a.direction === 'PAGAR' && a.status !== 'PAGADO')
     .reduce((acc, a) => acc + a.amount, 0)
-  const valueByModule = { SALDO: saldo, CUENTAS_POR_COBRAR: porCobrar, CUENTAS_POR_PAGAR: porPagar }
+  const presupuestoMaxPct = Math.max(
+    0,
+    ...budgets.filter((b) => b.month === monthKey(now.toISOString())).map((b) => calcBudgetConsumption(b, allTransactions).pct),
+  )
+  const ingresosHoy = sumBy(allTransactions.filter((t) => inPeriod(t, 'hoy', now)), 'INGRESO')
+
+  const valueByModule: Record<CustomAlertModule, number> = {
+    SALDO: saldo,
+    CUENTAS_POR_COBRAR: porCobrar,
+    CUENTAS_POR_PAGAR: porPagar,
+    PRESUPUESTO_CONSUMIDO: presupuestoMaxPct,
+    INGRESOS_HOY: ingresosHoy,
+  }
 
   return customAlerts
     .filter((c) => c.is_active)
+    .filter((c) => CUSTOM_ALERT_MODULE_COMPARATORS[c.module].includes(c.comparator))
     .filter((c) => {
       const value = valueByModule[c.module]
       return c.comparator === 'MENOR_QUE' ? value < c.threshold : value > c.threshold

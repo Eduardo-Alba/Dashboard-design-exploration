@@ -1,34 +1,42 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Chip } from '@/components/ui/Chip'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Toggle } from '@/components/ui/Toggle'
+import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useBusinessStore } from '@/store/useBusinessStore'
+import { useTransactionsStore } from '@/store/useTransactionsStore'
+import { useBudgetsStore } from '@/store/useBudgetsStore'
+import { useAccountsStore } from '@/store/useAccountsStore'
 import { useCustomAlertsStore } from '@/store/useCustomAlertsStore'
 import { useUIStore } from '@/store/useUIStore'
+import { CUSTOM_ALERT_MODULE_COMPARATORS, evaluateCustomAlerts } from '@/lib/finance/calculations'
 import type { CustomAlertAction, CustomAlertComparator, CustomAlertModule } from '@/types/domain'
 
-const MODULES: { value: CustomAlertModule; label: string }[] = [
-  { value: 'SALDO', label: 'Saldo' },
-  { value: 'CUENTAS_POR_COBRAR', label: 'Cuentas por Cobrar' },
-  { value: 'CUENTAS_POR_PAGAR', label: 'Cuentas por Pagar' },
-]
-const COMPARATORS: { value: CustomAlertComparator; label: string }[] = [
-  { value: 'MENOR_QUE', label: 'Es menor que' },
-  { value: 'MAYOR_QUE', label: 'Es mayor que' },
-]
+const MODULE_META: Record<CustomAlertModule, { label: string; valueLabel: string; suffix: string }> = {
+  SALDO: { label: 'Saldo', valueLabel: 'Saldo', suffix: 'RD$' },
+  CUENTAS_POR_COBRAR: { label: 'Cuentas por Cobrar', valueLabel: 'Total por Cobrar', suffix: 'RD$' },
+  CUENTAS_POR_PAGAR: { label: 'Cuentas por Pagar', valueLabel: 'Total por Pagar', suffix: 'RD$' },
+  PRESUPUESTO_CONSUMIDO: { label: 'Presupuesto Consumido', valueLabel: '% Consumido (el más alto del mes)', suffix: '%' },
+  INGRESOS_HOY: { label: 'Ingresos de Hoy', valueLabel: 'Ingresos de hoy', suffix: 'RD$' },
+}
+const MODULES = Object.keys(MODULE_META) as CustomAlertModule[]
+const COMPARATOR_LABEL: Record<CustomAlertComparator, string> = { MENOR_QUE: 'Es menor que', MAYOR_QUE: 'Es mayor que' }
 const ACTIONS: { value: CustomAlertAction; label: string }[] = [
   { value: 'AVISAR', label: 'Avisar' },
   { value: 'RECORDAR', label: 'Recordar' },
 ]
-const MODULE_LABEL = Object.fromEntries(MODULES.map((m) => [m.value, m.label]))
-const COMPARATOR_LABEL = Object.fromEntries(COMPARATORS.map((c) => [c.value, c.label]))
 
 export function CustomAlertsPage() {
   const profile = useAuthStore((s) => s.profile)
+  const business = useBusinessStore((s) => s.business)
+  const transactions = useTransactionsStore((s) => s.transactions)
+  const budgets = useBudgetsStore((s) => s.budgets)
+  const accounts = useAccountsStore((s) => s.accounts)
   const { alerts, isLoading, fetchAll, create, toggleActive, remove } = useCustomAlertsStore()
   const showToast = useUIStore((s) => s.showToast)
 
@@ -42,6 +50,18 @@ export function CustomAlertsPage() {
   useEffect(() => {
     if (profile) void fetchAll(profile.business_id)
   }, [profile, fetchAll])
+
+  const availableComparators = CUSTOM_ALERT_MODULE_COMPARATORS[module]
+
+  function onModuleChange(m: CustomAlertModule) {
+    setModule(m)
+    setComparator(CUSTOM_ALERT_MODULE_COMPARATORS[m][0])
+  }
+
+  const activeIds = useMemo(() => {
+    if (!business) return new Set<string>()
+    return new Set(evaluateCustomAlerts(alerts, business, transactions, budgets, accounts).map((a) => a.id))
+  }, [alerts, business, transactions, budgets, accounts])
 
   async function onSubmit() {
     if (!profile || !label.trim() || !threshold) return
@@ -75,8 +95,8 @@ export function CustomAlertsPage() {
             <div className="mb-2 text-[13px] font-semibold text-sec">Módulo</div>
             <div className="flex flex-wrap gap-2">
               {MODULES.map((m) => (
-                <Chip key={m.value} active={module === m.value} onClick={() => setModule(m.value)}>
-                  {m.label}
+                <Chip key={m} active={module === m} onClick={() => onModuleChange(m)}>
+                  {MODULE_META[m].label}
                 </Chip>
               ))}
             </div>
@@ -85,16 +105,19 @@ export function CustomAlertsPage() {
           <div>
             <div className="mb-2 text-[13px] font-semibold text-sec">Condición</div>
             <div className="flex flex-wrap gap-2">
-              {COMPARATORS.map((c) => (
-                <Chip key={c.value} active={comparator === c.value} onClick={() => setComparator(c.value)}>
-                  {c.label}
+              {availableComparators.map((c) => (
+                <Chip key={c} active={comparator === c} onClick={() => setComparator(c)}>
+                  {COMPARATOR_LABEL[c]}
                 </Chip>
               ))}
             </div>
+            {availableComparators.length === 1 && (
+              <p className="mt-1.5 text-[12px] text-ph">Este módulo solo tiene sentido con esta condición.</p>
+            )}
           </div>
 
           <Input
-            label="Valor (RD$)"
+            label={`${MODULE_META[module].valueLabel} (${MODULE_META[module].suffix})`}
             type="number"
             placeholder="0.00"
             value={threshold}
@@ -129,9 +152,13 @@ export function CustomAlertsPage() {
             {alerts.map((a) => (
               <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3.5 py-2.5">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-text">{a.label}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-semibold text-text">{a.label}</span>
+                    {a.is_active && activeIds.has(a.id) && <Badge variant="warning">Activa ahora</Badge>}
+                  </div>
                   <div className="text-[12px] text-sec">
-                    {MODULE_LABEL[a.module]} · {COMPARATOR_LABEL[a.comparator]} RD${a.threshold} · {a.action === 'AVISAR' ? 'Avisar' : 'Recordar'}
+                    {MODULE_META[a.module].label} · {COMPARATOR_LABEL[a.comparator]} {MODULE_META[a.module].suffix}
+                    {a.threshold} · {a.action === 'AVISAR' ? 'Avisar' : 'Recordar'}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
