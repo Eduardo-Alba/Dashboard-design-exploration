@@ -21,7 +21,8 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const profile = useAuthStore((s) => s.profile)
   const business = useBusinessStore((s) => s.business)
-  const { transactions, isLoading } = useTransactionsStore((s) => ({ transactions: s.transactions, isLoading: s.isLoading }))
+  const transactions = useTransactionsStore((s) => s.transactions)
+  const isLoading = useTransactionsStore((s) => s.isLoading)
   const openRegisterModal = useUIStore((s) => s.openRegisterModal)
   const alerts = useAlerts()
 

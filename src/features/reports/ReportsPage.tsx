@@ -23,7 +23,8 @@ function monthLabel(month: string): string {
 
 export function ReportsPage() {
   const business = useBusinessStore((s) => s.business)
-  const { transactions, isLoading } = useTransactionsStore((s) => ({ transactions: s.transactions, isLoading: s.isLoading }))
+  const transactions = useTransactionsStore((s) => s.transactions)
+  const isLoading = useTransactionsStore((s) => s.isLoading)
 
   const months = useMemo(() => {
     const set = new Set(transactions.map((t) => monthKey(t.occurred_at)))

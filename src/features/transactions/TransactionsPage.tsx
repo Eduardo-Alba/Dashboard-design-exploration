@@ -13,7 +13,8 @@ import { Plus } from 'lucide-react'
 
 export function TransactionsPage() {
   const [params] = useSearchParams()
-  const { transactions, isLoading } = useTransactionsStore((s) => ({ transactions: s.transactions, isLoading: s.isLoading }))
+  const transactions = useTransactionsStore((s) => s.transactions)
+  const isLoading = useTransactionsStore((s) => s.isLoading)
   const openRegisterModal = useUIStore((s) => s.openRegisterModal)
 
   const [search, setSearch] = useState('')
