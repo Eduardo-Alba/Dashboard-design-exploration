@@ -10,7 +10,7 @@ export function BottomNav() {
   const canSeeReportes = role === 'ADMIN' || role === 'CONTADOR'
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    cn('flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold', isActive ? 'text-green' : 'text-ph')
+    cn('flex flex-1 flex-col items-center gap-1 py-2 text-[11px] font-semibold', isActive ? 'text-green' : 'text-sec')
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center border-t border-border bg-surface-2/95 backdrop-blur-sm px-2 pb-[env(safe-area-inset-bottom)]">
@@ -28,7 +28,7 @@ export function BottomNav() {
         aria-label="Registrar transacción"
         className="flex flex-1 items-center justify-center cursor-pointer"
       >
-        <span className="flex h-14 w-14 -translate-y-4 items-center justify-center rounded-full bg-green text-white shadow-[0_4px_14px_rgba(90,155,111,.45)]">
+        <span className="flex h-14 w-14 -translate-y-4 items-center justify-center rounded-full bg-green-strong text-white shadow-[0_4px_14px_rgba(90,155,111,.45)]">
           <Plus size={26} />
         </span>
       </button>

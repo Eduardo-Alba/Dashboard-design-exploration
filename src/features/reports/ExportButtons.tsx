@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { FileSpreadsheet, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/store/useUIStore'
-import { exportStrategies, type ReportExportData } from '@/lib/export-strategies'
+import { loadExportStrategy, type ReportExportData } from '@/lib/export-strategies'
 
 export function ExportButtons({ buildData }: { buildData: () => ReportExportData }) {
   const showToast = useUIStore((s) => s.showToast)
@@ -12,7 +12,8 @@ export function ExportButtons({ buildData }: { buildData: () => ReportExportData
     setPending(format)
     showToast('success', 'Generando reporte…')
     try {
-      await exportStrategies[format].execute(buildData())
+      const strategy = await loadExportStrategy(format)
+      await strategy.execute(buildData())
     } catch {
       showToast('error', 'No se pudo generar el reporte.')
     } finally {

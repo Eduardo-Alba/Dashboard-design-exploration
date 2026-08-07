@@ -30,7 +30,7 @@ export function Topbar() {
           <button
             type="button"
             onClick={openRegisterModal}
-            className="hidden md:flex items-center gap-2 rounded-lg bg-green px-4 py-2.5 text-[13.5px] font-bold text-white cursor-pointer hover:bg-green-d"
+            className="hidden md:flex items-center gap-2 rounded-lg bg-green-strong px-4 py-2.5 text-[13.5px] font-bold text-white cursor-pointer hover:bg-green-strong-hover"
           >
             <Plus size={16} />
             Registrar

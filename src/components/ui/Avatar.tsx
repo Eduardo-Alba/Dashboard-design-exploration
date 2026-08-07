@@ -12,7 +12,7 @@ function initials(name: string): string {
 export function Avatar({ name, size = 36, className }: { name: string; size?: number; className?: string }) {
   return (
     <div
-      className={cn('flex shrink-0 items-center justify-center rounded-full bg-green font-bold text-white', className)}
+      className={cn('flex shrink-0 items-center justify-center rounded-full bg-green-strong font-bold text-white', className)}
       style={{ width: size, height: size, fontSize: size * 0.4 }}
     >
       {initials(name)}

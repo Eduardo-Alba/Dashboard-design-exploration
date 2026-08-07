@@ -8,23 +8,32 @@
   --raise: #ffffff;
   --text: #1b5e3f;
   --body: #2d3748;
-  --sec: #718096;
+  --sec: #5e6b7e;
   --ph: #a0aec0;
   --border: #e6e2d6;
 
-  --green: #5a9b6f;
+  --green: #437453;
   --green-d: #1b5e3f;
   --pastel: #d4e5a2;
   --pastel-soft: #eaf1d2;
-  --teal: #2b8a8a;
+  --teal: #247575;
   --teal-d: #1f6566;
 
   --brown: #8b4513;
   --brown-bg: #f5e9d6;
-  --warn: #cc8800;
+  --warn: #8a5a00;
   --warn-bg: #fbebc9;
   --error: #c41e3a;
   --error-bg: #fbe2e2;
+
+  /* Relleno sólido con texto/ícono blanco encima (botones, chip activo, avatar, FAB) — fijo en
+     ambos temas. --green/--teal ya varían por tema para uso como texto/acento (deben ser
+     brillantes en modo oscuro), lo que los vuelve inválidos como fondo con texto blanco ahí;
+     estos dos tokens existen para ese caso específico, verificados ≥4.5:1 contra blanco. */
+  --green-strong: #437453;
+  --green-strong-hover: #355c42;
+  --teal-strong: #247575;
+  --teal-strong-hover: #1c5d5d;
 
   --shadow: 0 1px 3px rgba(27, 94, 63, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 10px 30px rgba(27, 94, 63, 0.12);
@@ -75,10 +84,14 @@
 
   --color-green: var(--green);
   --color-green-d: var(--green-d);
+  --color-green-strong: var(--green-strong);
+  --color-green-strong-hover: var(--green-strong-hover);
   --color-pastel: var(--pastel);
   --color-pastel-soft: var(--pastel-soft);
   --color-teal: var(--teal);
   --color-teal-d: var(--teal-d);
+  --color-teal-strong: var(--teal-strong);
+  --color-teal-strong-hover: var(--teal-strong-hover);
 
   --color-brown: var(--brown);
   --color-brown-bg: var(--brown-bg);

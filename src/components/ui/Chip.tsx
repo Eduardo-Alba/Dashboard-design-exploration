@@ -8,7 +8,7 @@ export function Chip({ active, onClick, children }: { active?: boolean; onClick?
       onClick={onClick}
       className={cn(
         'rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors cursor-pointer',
-        active ? 'bg-green text-white' : 'bg-surface text-sec border border-border hover:bg-pastel-soft',
+        active ? 'bg-green-strong text-white' : 'bg-surface text-sec border border-border hover:bg-pastel-soft',
       )}
     >
       {children}
