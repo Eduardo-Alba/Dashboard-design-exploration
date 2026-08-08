@@ -22,6 +22,8 @@ export type CustomAlertModule = 'SALDO' | 'CUENTAS_POR_COBRAR' | 'CUENTAS_POR_PA
 export type CustomAlertComparator = 'MENOR_QUE' | 'MAYOR_QUE'
 export type CustomAlertAction = 'AVISAR' | 'RECORDAR'
 export type CustomAlertSeverity = 'INFO' | 'ADVERTENCIA' | 'CRITICA'
+export type CustomAlertConditionType = 'VALOR_FIJO' | 'COMPARAR_MODULO' | 'VENCIMIENTO'
+export type CustomAlertVencimientoSentido = 'ATRASADA' | 'PROXIMA'
 
 export interface Business {
   id: string
@@ -81,8 +83,11 @@ export interface CustomAlert {
   business_id: string
   label: string
   module: CustomAlertModule
+  condition_type: CustomAlertConditionType
   comparator: CustomAlertComparator
-  threshold: number
+  threshold: number | null
+  compare_module: CustomAlertModule | null
+  vencimiento_sentido: CustomAlertVencimientoSentido
   action: CustomAlertAction
   severity: CustomAlertSeverity
   channels: AlertChannel[]

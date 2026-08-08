@@ -1,11 +1,13 @@
 import { EXPENSE_CATEGORIES } from '@/lib/constants/categories'
 import type {
+  AccountDirection,
   AccountEntry,
   AlertConfig,
   Budget,
   Business,
   CustomAlert,
   CustomAlertComparator,
+  CustomAlertConditionType,
   CustomAlertModule,
   CustomAlertSeverity,
   Transaction,
@@ -102,14 +104,15 @@ export function displayStatus(account: AccountEntry, now = new Date()): AccountE
   return account.status
 }
 
+/** Cuentas de una direccion que todavia cuentan para el total pendiente (no pagadas). */
+function pendingAccounts(accounts: AccountEntry[], direction: AccountDirection): AccountEntry[] {
+  return accounts.filter((a) => a.direction === direction && a.status !== 'PAGADO')
+}
+
 /** Regla 8: flujo de caja en riesgo si (saldo + por cobrar pendiente) < por pagar pendiente. */
 export function calcCashFlowRisk(saldo: number, accounts: AccountEntry[]): { atRisk: boolean; shortfall: number } {
-  const porCobrar = accounts
-    .filter((a) => a.direction === 'COBRAR' && a.status !== 'PAGADO')
-    .reduce((acc, a) => acc + a.amount, 0)
-  const porPagar = accounts
-    .filter((a) => a.direction === 'PAGAR' && a.status !== 'PAGADO')
-    .reduce((acc, a) => acc + a.amount, 0)
+  const porCobrar = pendingAccounts(accounts, 'COBRAR').reduce((acc, a) => acc + a.amount, 0)
+  const porPagar = pendingAccounts(accounts, 'PAGAR').reduce((acc, a) => acc + a.amount, 0)
   const disponible = saldo + porCobrar
   return { atRisk: disponible < porPagar, shortfall: Math.max(0, porPagar - disponible) }
 }
@@ -184,9 +187,10 @@ export interface ActiveCustomAlert {
 }
 
 /**
- * Comparadores validos por modulo (logica de negocio real de cada uno, no un generico
- * menor/mayor para todos): un % de presupuesto consumido solo alerta si SE PASA de un umbral
- * (nunca "menor que"), un ingreso bajo solo alerta si CAE por debajo (nunca "mayor que").
+ * Comparadores validos por modulo bajo condicion VALOR_FIJO (logica de negocio real de cada
+ * uno, no un generico menor/mayor para todos): un % de presupuesto consumido solo alerta si SE
+ * PASA de un umbral (nunca "menor que"), un ingreso bajo solo alerta si CAE por debajo (nunca
+ * "mayor que"). COMPARAR_MODULO siempre admite ambos sentidos, sin importar el modulo.
  */
 export const CUSTOM_ALERT_MODULE_COMPARATORS: Record<CustomAlertModule, CustomAlertComparator[]> = {
   SALDO: ['MENOR_QUE', 'MAYOR_QUE'],
@@ -194,6 +198,29 @@ export const CUSTOM_ALERT_MODULE_COMPARATORS: Record<CustomAlertModule, CustomAl
   CUENTAS_POR_PAGAR: ['MENOR_QUE', 'MAYOR_QUE'],
   PRESUPUESTO_CONSUMIDO: ['MAYOR_QUE'],
   INGRESOS_HOY: ['MENOR_QUE'],
+}
+
+/**
+ * Tipos de condicion validos por modulo: Presupuesto Consumido (%) e Ingresos de Hoy (flujo del
+ * dia) solo admiten Valor fijo — no son comparables entre modulos ni tienen due_date por fila
+ * para calcular vencimiento. Los 3 modulos en RD$ admiten Comparar modulo; solo los 2
+ * respaldados por AccountEntry (con due_date) admiten Vencimiento.
+ */
+export const CUSTOM_ALERT_MODULE_CONDITION_TYPES: Record<CustomAlertModule, CustomAlertConditionType[]> = {
+  SALDO: ['VALOR_FIJO', 'COMPARAR_MODULO'],
+  CUENTAS_POR_COBRAR: ['VALOR_FIJO', 'COMPARAR_MODULO', 'VENCIMIENTO'],
+  CUENTAS_POR_PAGAR: ['VALOR_FIJO', 'COMPARAR_MODULO', 'VENCIMIENTO'],
+  PRESUPUESTO_CONSUMIDO: ['VALOR_FIJO'],
+  INGRESOS_HOY: ['VALOR_FIJO'],
+}
+
+/** Modulos objetivo validos para Comparar modulo, por modulo de origen. */
+export const CUSTOM_ALERT_COMPARE_TARGETS: Record<CustomAlertModule, CustomAlertModule[]> = {
+  SALDO: ['CUENTAS_POR_COBRAR', 'CUENTAS_POR_PAGAR'],
+  CUENTAS_POR_COBRAR: ['SALDO', 'CUENTAS_POR_PAGAR'],
+  CUENTAS_POR_PAGAR: ['SALDO', 'CUENTAS_POR_COBRAR'],
+  PRESUPUESTO_CONSUMIDO: [],
+  INGRESOS_HOY: [],
 }
 
 export const CUSTOM_ALERT_MODULE_SUFFIX: Record<CustomAlertModule, string> = {
@@ -218,12 +245,8 @@ export function evaluateCustomAlerts(
 ): ActiveCustomAlert[] {
   const now = new Date()
   const saldo = calcSaldoTotal(business, allTransactions)
-  const porCobrar = accounts
-    .filter((a) => a.direction === 'COBRAR' && a.status !== 'PAGADO')
-    .reduce((acc, a) => acc + a.amount, 0)
-  const porPagar = accounts
-    .filter((a) => a.direction === 'PAGAR' && a.status !== 'PAGADO')
-    .reduce((acc, a) => acc + a.amount, 0)
+  const porCobrar = pendingAccounts(accounts, 'COBRAR').reduce((acc, a) => acc + a.amount, 0)
+  const porPagar = pendingAccounts(accounts, 'PAGAR').reduce((acc, a) => acc + a.amount, 0)
   const presupuestoMaxPct = Math.max(
     0,
     ...budgets.filter((b) => b.month === monthKey(now.toISOString())).map((b) => calcBudgetConsumption(b, allTransactions).pct),
@@ -238,20 +261,61 @@ export function evaluateCustomAlerts(
     INGRESOS_HOY: ingresosHoy,
   }
 
-  return customAlerts
-    .filter((c) => c.is_active)
-    .filter((c) => CUSTOM_ALERT_MODULE_COMPARATORS[c.module].includes(c.comparator))
-    .filter((c) => {
+  function autoMessage(c: CustomAlert, formattedValue: string): string {
+    return c.custom_message
+      ? c.custom_message.replaceAll('{valor}', formattedValue)
+      : `${c.label}: valor actual ${formattedValue}${CUSTOM_ALERT_MODULE_SUFFIX[c.module]}`
+  }
+
+  return customAlerts.filter((c) => c.is_active).flatMap((c): ActiveCustomAlert[] => {
+    if (c.condition_type === 'VALOR_FIJO') {
+      if (c.threshold == null || !CUSTOM_ALERT_MODULE_COMPARATORS[c.module].includes(c.comparator)) return []
       const value = valueByModule[c.module]
-      return c.comparator === 'MENOR_QUE' ? value < c.threshold : value > c.threshold
-    })
-    .map((c) => {
-      const formattedValue = formatCustomAlertValue(c.module, valueByModule[c.module])
+      const matches = c.comparator === 'MENOR_QUE' ? value < c.threshold : value > c.threshold
+      if (!matches) return []
+      const formattedValue = formatCustomAlertValue(c.module, value)
+      return [{ id: c.id, label: c.label, action: c.action, severity: c.severity, message: autoMessage(c, formattedValue) }]
+    }
+
+    if (c.condition_type === 'COMPARAR_MODULO') {
+      if (!c.compare_module) return []
+      const value = valueByModule[c.module]
+      const compareValue = valueByModule[c.compare_module]
+      const matches = c.comparator === 'MENOR_QUE' ? value < compareValue : value > compareValue
+      if (!matches) return []
+      const formattedValue = formatCustomAlertValue(c.module, value)
+      const formattedCompare = formatCustomAlertValue(c.compare_module, compareValue)
+      const sentido = c.comparator === 'MENOR_QUE' ? 'menor que' : 'mayor que'
+      const defaultMessage = `${c.label}: ${CUSTOM_ALERT_MODULE_SUFFIX[c.module]}${formattedValue} es ${sentido} ${CUSTOM_ALERT_MODULE_SUFFIX[c.compare_module]}${formattedCompare}`
       const message = c.custom_message
-        ? c.custom_message.replaceAll('{valor}', formattedValue)
-        : `${c.label}: valor actual ${formattedValue}${CUSTOM_ALERT_MODULE_SUFFIX[c.module]}`
-      return { id: c.id, label: c.label, action: c.action, severity: c.severity, message }
-    })
+        ? c.custom_message.replaceAll('{valor}', formattedValue).replaceAll('{valor_comparado}', formattedCompare)
+        : defaultMessage
+      return [{ id: c.id, label: c.label, action: c.action, severity: c.severity, message }]
+    }
+
+    // VENCIMIENTO
+    if (c.threshold == null) return []
+    const direction = c.module === 'CUENTAS_POR_COBRAR' ? 'COBRAR' : 'PAGAR'
+    const matches = pendingAccounts(accounts, direction)
+      .map((a) => ({
+        account: a,
+        diasAtraso: Math.floor((now.getTime() - new Date(a.due_date).getTime()) / 86_400_000),
+        diasRestantes: Math.ceil((new Date(a.due_date).getTime() - now.getTime()) / 86_400_000),
+      }))
+      .filter(({ diasAtraso, diasRestantes }) =>
+        c.vencimiento_sentido === 'PROXIMA' ? diasRestantes >= 0 && diasRestantes <= c.threshold! : diasAtraso > c.threshold!,
+      )
+    if (matches.length === 0) return []
+    const nombrados = matches
+      .slice(0, 3)
+      .map(({ account, diasAtraso, diasRestantes }) => `${account.party} (${c.vencimiento_sentido === 'PROXIMA' ? diasRestantes : diasAtraso}d)`)
+      .join(', ')
+    const resto = matches.length > 3 ? ` y ${matches.length - 3} más` : ''
+    const verbo = c.vencimiento_sentido === 'PROXIMA' ? 'próximas a vencer' : 'atrasadas'
+    const defaultMessage = `${matches.length} cuenta(s) ${verbo}: ${nombrados}${resto}`
+    const message = c.custom_message ? autoMessage(c, matches.length.toString()) : defaultMessage
+    return [{ id: c.id, label: c.label, action: c.action, severity: c.severity, message }]
+  })
 }
 
 /** Desglose de gastos por categoría del periodo, para la gráfica de dona y el reporte. */

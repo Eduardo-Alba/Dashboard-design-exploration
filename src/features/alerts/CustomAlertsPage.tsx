@@ -15,13 +15,22 @@ import { useBudgetsStore } from '@/store/useBudgetsStore'
 import { useAccountsStore } from '@/store/useAccountsStore'
 import { useCustomAlertsStore } from '@/store/useCustomAlertsStore'
 import { useUIStore } from '@/store/useUIStore'
-import { CUSTOM_ALERT_MODULE_COMPARATORS, CUSTOM_ALERT_MODULE_SUFFIX, evaluateCustomAlerts } from '@/lib/finance/calculations'
+import {
+  CUSTOM_ALERT_COMPARE_TARGETS,
+  CUSTOM_ALERT_MODULE_COMPARATORS,
+  CUSTOM_ALERT_MODULE_CONDITION_TYPES,
+  CUSTOM_ALERT_MODULE_SUFFIX,
+  evaluateCustomAlerts,
+} from '@/lib/finance/calculations'
 import type {
   AlertChannel,
+  CustomAlert,
   CustomAlertAction,
   CustomAlertComparator,
+  CustomAlertConditionType,
   CustomAlertModule,
   CustomAlertSeverity,
+  CustomAlertVencimientoSentido,
 } from '@/types/domain'
 
 const MODULE_META: Record<CustomAlertModule, { label: string; valueLabel: string }> = {
@@ -32,6 +41,11 @@ const MODULE_META: Record<CustomAlertModule, { label: string; valueLabel: string
   INGRESOS_HOY: { label: 'Ingresos de Hoy', valueLabel: 'Ingresos de hoy' },
 }
 const MODULES = Object.keys(MODULE_META) as CustomAlertModule[]
+const CONDITION_TYPE_LABEL: Record<CustomAlertConditionType, string> = {
+  VALOR_FIJO: 'Valor fijo',
+  COMPARAR_MODULO: 'Comparar módulo',
+  VENCIMIENTO: 'Vencimiento',
+}
 const COMPARATOR_LABEL: Record<CustomAlertComparator, string> = { MENOR_QUE: 'Es menor que', MAYOR_QUE: 'Es mayor que' }
 const ACTIONS: { value: CustomAlertAction; label: string }[] = [
   { value: 'AVISAR', label: 'Avisar' },
@@ -50,6 +64,13 @@ const SEVERITY_BADGE: Record<CustomAlertSeverity, 'neutral' | 'warning' | 'error
 const CHANNELS: AlertChannel[] = ['EMAIL', 'WHATSAPP', 'IN_APP']
 const CHANNEL_LABELS: Record<AlertChannel, string> = { EMAIL: 'Email', WHATSAPP: 'WhatsApp', IN_APP: 'En la app' }
 
+function conditionLine(a: CustomAlert): string {
+  if (a.condition_type === 'VALOR_FIJO') return `${COMPARATOR_LABEL[a.comparator]} ${CUSTOM_ALERT_MODULE_SUFFIX[a.module]}${a.threshold}`
+  if (a.condition_type === 'COMPARAR_MODULO') return `${COMPARATOR_LABEL[a.comparator]} ${MODULE_META[a.compare_module!].label}`
+  const sentido = a.vencimiento_sentido === 'PROXIMA' ? 'Próxima a vencer en' : 'Atrasada más de'
+  return `${sentido} ${a.threshold} día(s)`
+}
+
 export function CustomAlertsPage() {
   const profile = useAuthStore((s) => s.profile)
   const business = useBusinessStore((s) => s.business)
@@ -61,8 +82,11 @@ export function CustomAlertsPage() {
 
   const [label, setLabel] = useState('')
   const [module, setModule] = useState<CustomAlertModule>('SALDO')
+  const [conditionType, setConditionType] = useState<CustomAlertConditionType>('VALOR_FIJO')
   const [comparator, setComparator] = useState<CustomAlertComparator>('MENOR_QUE')
   const [threshold, setThreshold] = useState('')
+  const [compareModule, setCompareModule] = useState<CustomAlertModule | null>(null)
+  const [vencimientoSentido, setVencimientoSentido] = useState<CustomAlertVencimientoSentido>('ATRASADA')
   const [action, setAction] = useState<CustomAlertAction>('AVISAR')
   const [severity, setSeverity] = useState<CustomAlertSeverity>('ADVERTENCIA')
   const [channels, setChannels] = useState<AlertChannel[]>(['IN_APP'])
@@ -73,11 +97,18 @@ export function CustomAlertsPage() {
     if (profile) void fetchAll(profile.business_id)
   }, [profile, fetchAll])
 
-  const availableComparators = CUSTOM_ALERT_MODULE_COMPARATORS[module]
-
   function onModuleChange(m: CustomAlertModule) {
     setModule(m)
+    const firstConditionType = CUSTOM_ALERT_MODULE_CONDITION_TYPES[m][0]
+    setConditionType(firstConditionType)
     setComparator(CUSTOM_ALERT_MODULE_COMPARATORS[m][0])
+    setCompareModule(firstConditionType === 'COMPARAR_MODULO' ? CUSTOM_ALERT_COMPARE_TARGETS[m][0] : null)
+    setVencimientoSentido('ATRASADA')
+  }
+
+  function onConditionTypeChange(ct: CustomAlertConditionType) {
+    setConditionType(ct)
+    setCompareModule(ct === 'COMPARAR_MODULO' ? CUSTOM_ALERT_COMPARE_TARGETS[module][0] : null)
   }
 
   function toggleChannel(ch: AlertChannel) {
@@ -96,15 +127,20 @@ export function CustomAlertsPage() {
     void syncTriggerState(new Set(activeById.keys()))
   }, [activeById, syncTriggerState])
 
+  const canSubmit = label.trim() && (conditionType === 'COMPARAR_MODULO' ? !!compareModule : !!threshold)
+
   async function onSubmit() {
-    if (!profile || !label.trim() || !threshold) return
+    if (!profile || !canSubmit) return
     setIsSaving(true)
     await create({
       business_id: profile.business_id,
       label: label.trim(),
       module,
+      condition_type: conditionType,
       comparator,
-      threshold: Number(threshold),
+      threshold: conditionType === 'COMPARAR_MODULO' ? null : Number(threshold),
+      compare_module: conditionType === 'COMPARAR_MODULO' ? compareModule : null,
+      vencimiento_sentido: module === 'CUENTAS_POR_PAGAR' && conditionType === 'VENCIMIENTO' ? vencimientoSentido : 'ATRASADA',
       action,
       severity,
       channels,
@@ -140,26 +176,84 @@ export function CustomAlertsPage() {
           </div>
 
           <div>
-            <div className="mb-2 text-[13px] font-semibold text-sec">Condición</div>
+            <div className="mb-2 text-[13px] font-semibold text-sec">Tipo de condición</div>
             <div className="flex flex-wrap gap-2">
-              {availableComparators.map((c) => (
-                <Chip key={c} active={comparator === c} onClick={() => setComparator(c)}>
-                  {COMPARATOR_LABEL[c]}
+              {CUSTOM_ALERT_MODULE_CONDITION_TYPES[module].map((ct) => (
+                <Chip key={ct} active={conditionType === ct} onClick={() => onConditionTypeChange(ct)}>
+                  {CONDITION_TYPE_LABEL[ct]}
                 </Chip>
               ))}
             </div>
-            {availableComparators.length === 1 && (
-              <p className="mt-1.5 text-[12px] text-ph">Este módulo solo tiene sentido con esta condición.</p>
+            {CUSTOM_ALERT_MODULE_CONDITION_TYPES[module].length === 1 && (
+              <p className="mt-1.5 text-[12px] text-ph">Este módulo solo admite Valor fijo.</p>
             )}
           </div>
 
-          <Input
-            label={`${MODULE_META[module].valueLabel} (${CUSTOM_ALERT_MODULE_SUFFIX[module]})`}
-            type="number"
-            placeholder="0.00"
-            value={threshold}
-            onChange={(e) => setThreshold(e.target.value)}
-          />
+          {conditionType !== 'VENCIMIENTO' && (
+            <div>
+              <div className="mb-2 text-[13px] font-semibold text-sec">Condición</div>
+              <div className="flex flex-wrap gap-2">
+                {(conditionType === 'COMPARAR_MODULO' ? (['MENOR_QUE', 'MAYOR_QUE'] as CustomAlertComparator[]) : CUSTOM_ALERT_MODULE_COMPARATORS[module]).map(
+                  (c) => (
+                    <Chip key={c} active={comparator === c} onClick={() => setComparator(c)}>
+                      {COMPARATOR_LABEL[c]}
+                    </Chip>
+                  ),
+                )}
+              </div>
+              {conditionType === 'VALOR_FIJO' && CUSTOM_ALERT_MODULE_COMPARATORS[module].length === 1 && (
+                <p className="mt-1.5 text-[12px] text-ph">Este módulo solo tiene sentido con esta condición.</p>
+              )}
+            </div>
+          )}
+
+          {conditionType === 'VALOR_FIJO' && (
+            <Input
+              label={`${MODULE_META[module].valueLabel} (${CUSTOM_ALERT_MODULE_SUFFIX[module]})`}
+              type="number"
+              placeholder="0.00"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+            />
+          )}
+
+          {conditionType === 'COMPARAR_MODULO' && (
+            <div>
+              <div className="mb-2 text-[13px] font-semibold text-sec">Comparar contra</div>
+              <div className="flex flex-wrap gap-2">
+                {CUSTOM_ALERT_COMPARE_TARGETS[module].map((m) => (
+                  <Chip key={m} active={compareModule === m} onClick={() => setCompareModule(m)}>
+                    {MODULE_META[m].label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {conditionType === 'VENCIMIENTO' && (
+            <>
+              {module === 'CUENTAS_POR_PAGAR' && (
+                <div>
+                  <div className="mb-2 text-[13px] font-semibold text-sec">Sentido</div>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip active={vencimientoSentido === 'ATRASADA'} onClick={() => setVencimientoSentido('ATRASADA')}>
+                      Atrasada
+                    </Chip>
+                    <Chip active={vencimientoSentido === 'PROXIMA'} onClick={() => setVencimientoSentido('PROXIMA')}>
+                      Próxima a vencer
+                    </Chip>
+                  </div>
+                </div>
+              )}
+              <Input
+                label={vencimientoSentido === 'PROXIMA' ? 'Días de anticipación' : 'Días de atraso'}
+                type="number"
+                placeholder="30"
+                value={threshold}
+                onChange={(e) => setThreshold(e.target.value)}
+              />
+            </>
+          )}
 
           <div>
             <div className="mb-2 text-[13px] font-semibold text-sec">Acción</div>
@@ -202,13 +296,16 @@ export function CustomAlertsPage() {
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
             />
-            <div className="-mt-2.5 flex items-center gap-2">
+            <div className="-mt-2.5 flex flex-wrap items-center gap-2">
               <Chip onClick={() => setCustomMessage((m) => `${m}{valor}`)}>+ Insertar valor calculado</Chip>
+              {conditionType === 'COMPARAR_MODULO' && (
+                <Chip onClick={() => setCustomMessage((m) => `${m}{valor_comparado}`)}>+ Insertar valor comparado</Chip>
+              )}
               <span className="text-[12px] text-ph">Si lo dejas vacío, se genera un mensaje automático.</span>
             </div>
           </div>
 
-          <Button onClick={onSubmit} disabled={isSaving || !label.trim() || !threshold}>
+          <Button onClick={onSubmit} disabled={isSaving || !canSubmit}>
             {isSaving ? 'Creando…' : 'Crear alerta'}
           </Button>
         </div>
@@ -233,8 +330,7 @@ export function CustomAlertsPage() {
                       {showAsActive && <Badge variant={SEVERITY_BADGE[a.severity]}>Activa ahora</Badge>}
                     </div>
                     <div className="text-[12px] text-sec">
-                      {MODULE_META[a.module].label} · {COMPARATOR_LABEL[a.comparator]} {CUSTOM_ALERT_MODULE_SUFFIX[a.module]}
-                      {a.threshold} · {a.action === 'AVISAR' ? 'Avisar' : 'Recordar'}
+                      {MODULE_META[a.module].label} · {conditionLine(a)} · {a.action === 'AVISAR' ? 'Avisar' : 'Recordar'}
                     </div>
                     {showAsActive && active && <div className="mt-1 text-[12.5px] text-text">{active.message}</div>}
                   </div>
