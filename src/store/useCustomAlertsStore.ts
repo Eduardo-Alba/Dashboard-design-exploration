@@ -1,6 +1,18 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase/client'
+import type { ActiveCustomAlert } from '@/lib/finance/calculations'
 import type { CustomAlert } from '@/types/domain'
+
+async function sendAlertEmail(label: string, message: string) {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  if (!token) return
+  await fetch('/api/send-alert-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ subject: `FinanZen: ${label}`, message }),
+  }).catch(() => {})
+}
 
 interface CustomAlertsState {
   alerts: CustomAlert[]
@@ -9,7 +21,7 @@ interface CustomAlertsState {
   create: (alert: Omit<CustomAlert, 'id' | 'created_at' | 'is_active' | 'was_triggered' | 'dismissed'>) => Promise<void>
   toggleActive: (id: string, isActive: boolean) => Promise<void>
   remove: (id: string) => Promise<void>
-  syncTriggerState: (triggeredIds: Set<string>) => Promise<void>
+  syncTriggerState: (triggeredById: Map<string, ActiveCustomAlert>) => Promise<void>
   dismiss: (id: string) => Promise<void>
 }
 
@@ -43,10 +55,10 @@ export const useCustomAlertsStore = create<CustomAlertsState>((set, get) => ({
   },
 
   /** Solo escribe cuando hay una transicion real (evita loops y escrituras redundantes). */
-  syncTriggerState: async (triggeredIds) => {
+  syncTriggerState: async (triggeredById) => {
     for (const a of get().alerts) {
-      const isTriggered = triggeredIds.has(a.id)
-      if (isTriggered && !a.was_triggered) {
+      const triggered = triggeredById.get(a.id)
+      if (triggered && !a.was_triggered) {
         const { data } = await supabase
           .from('custom_alerts')
           .update({ was_triggered: true, dismissed: false })
@@ -54,7 +66,8 @@ export const useCustomAlertsStore = create<CustomAlertsState>((set, get) => ({
           .select()
           .single()
         if (data) set({ alerts: get().alerts.map((x) => (x.id === a.id ? (data as CustomAlert) : x)) })
-      } else if (!isTriggered && a.was_triggered) {
+        if (a.channels.includes('EMAIL')) void sendAlertEmail(a.label, triggered.message)
+      } else if (!triggered && a.was_triggered) {
         const { data } = await supabase.from('custom_alerts').update({ was_triggered: false }).eq('id', a.id).select().single()
         if (data) set({ alerts: get().alerts.map((x) => (x.id === a.id ? (data as CustomAlert) : x)) })
       }

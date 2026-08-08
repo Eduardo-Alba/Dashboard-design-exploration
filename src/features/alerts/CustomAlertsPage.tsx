@@ -124,7 +124,7 @@ export function CustomAlertsPage() {
   // Solo escribe cuando hay una transicion real de disparo (ver useCustomAlertsStore.syncTriggerState) —
   // evita el loop de render que ya se encontro con selectores de Zustand esta misma sesion.
   useEffect(() => {
-    void syncTriggerState(new Set(activeById.keys()))
+    void syncTriggerState(activeById)
   }, [activeById, syncTriggerState])
 
   const canSubmit = label.trim() && (conditionType === 'COMPARAR_MODULO' ? !!compareModule : !!threshold)
