@@ -2,11 +2,10 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Eye, EyeOff, Wallet as LogoIcon } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
-import { setRememberSession, supabase } from '@/lib/supabase/client'
+import { setRememberSession } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
-import { GoogleIcon } from '@/components/icons/GoogleIcon'
 
 export function LoginPage() {
   const status = useAuthStore((s) => s.status)
@@ -36,11 +35,6 @@ export function LoginPage() {
     const { error } = await signIn(email.trim(), password)
     setIsSubmitting(false)
     if (error) setSubmitError(error)
-  }
-
-  async function onGoogleSignIn() {
-    setRememberSession(remember)
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/` } })
   }
 
   return (
@@ -101,21 +95,6 @@ export function LoginPage() {
               {isSubmitting ? 'Ingresando…' : 'Iniciar Sesión'}
             </Button>
           </form>
-
-          <div className="my-4 flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-ph">o</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <button
-            type="button"
-            onClick={onGoogleSignIn}
-            className="flex w-full items-center justify-center gap-2.5 rounded-[9px] border border-border bg-bg py-3 text-sm font-semibold text-body cursor-pointer hover:bg-surface"
-          >
-            <GoogleIcon />
-            Continuar con Google
-          </button>
         </div>
         <div className="mt-4.5 text-center text-xs text-ph">Demo: ali@colmado.com · contraseña de prueba (ver README)</div>
       </div>
