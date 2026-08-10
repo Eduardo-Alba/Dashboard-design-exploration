@@ -24,7 +24,7 @@ export function DashboardPage() {
   const transactions = useTransactionsStore((s) => s.transactions)
   const isLoading = useTransactionsStore((s) => s.isLoading)
   const openRegisterModal = useUIStore((s) => s.openRegisterModal)
-  const alerts = useAlerts()
+  const { fixed: alerts } = useAlerts()
 
   const [period, setPeriod] = useState<Period>('mes')
   const today = todayLocalDateInput()

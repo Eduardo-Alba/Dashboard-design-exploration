@@ -9,7 +9,6 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { TransactionsPage } from '@/features/transactions/TransactionsPage'
 import { BudgetsPage } from '@/features/budgets/BudgetsPage'
 import { AlertsPage } from '@/features/alerts/AlertsPage'
-import { CustomAlertsPage } from '@/features/alerts/CustomAlertsPage'
 import { ReceivablesPage } from '@/features/accounts/ReceivablesPage'
 import { PayablesPage } from '@/features/accounts/PayablesPage'
 import { ReportsPage } from '@/features/reports/ReportsPage'
@@ -60,14 +59,6 @@ function App() {
             element={
               <ProtectedRoute roles={['ADMIN']}>
                 <AlertsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/alertas-experimental"
-            element={
-              <ProtectedRoute roles={['ADMIN']}>
-                <CustomAlertsPage />
               </ProtectedRoute>
             }
           />

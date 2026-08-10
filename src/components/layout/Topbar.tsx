@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Bell, BellPlus, Moon, Plus, Settings, Sun } from 'lucide-react'
+import { Bell, Moon, Plus, Settings, Sun } from 'lucide-react'
 import { NAV_ITEMS } from './navConfig'
 import { useUIStore } from '@/store/useUIStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -16,7 +16,7 @@ export function Topbar() {
   const toggleDark = useUIStore((s) => s.toggleDark)
   const openRegisterModal = useUIStore((s) => s.openRegisterModal)
   const role = useAuthStore((s) => s.profile?.role)
-  const alerts = useAlerts()
+  const { combined: alerts } = useAlerts()
   const [notifOpen, setNotifOpen] = useState(false)
 
   const title = NAV_ITEMS.find((i) => i.to === location.pathname)?.label ?? 'FinanZen'
@@ -51,17 +51,6 @@ export function Topbar() {
         {role === 'ADMIN' && (
           <button
             type="button"
-            onClick={() => navigate('/alertas-experimental')}
-            title="Alertas personalizadas (experimental)"
-            aria-label="Alertas personalizadas (experimental)"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-text cursor-pointer"
-          >
-            <BellPlus size={18} />
-          </button>
-        )}
-        {role === 'ADMIN' && (
-          <button
-            type="button"
             onClick={() => setNotifOpen(true)}
             title="Notificaciones"
             aria-label="Notificaciones"
@@ -83,8 +72,8 @@ export function Topbar() {
             <p className="text-sm text-sec">No hay alertas activas por ahora.</p>
           ) : (
             <ul className="flex flex-col gap-2.5">
-              {alerts.map((a, i) => (
-                <li key={i} className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-text">
+              {alerts.map((a) => (
+                <li key={a.key} className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-text">
                   {a.message}
                 </li>
               ))}

@@ -9,6 +9,7 @@ import { useTransactionsStore } from '@/store/useTransactionsStore'
 import { useBudgetsStore } from '@/store/useBudgetsStore'
 import { useAccountsStore } from '@/store/useAccountsStore'
 import { useAlertsStore } from '@/store/useAlertsStore'
+import { useCustomAlertsStore } from '@/store/useCustomAlertsStore'
 import { ToastViewport } from '@/components/ui/Toast'
 import { TransactionFormModal } from '@/features/transactions/TransactionFormModal'
 
@@ -36,6 +37,7 @@ export function AppShell() {
     }
     if (isAdmin) {
       void useAlertsStore.getState().fetchAll(businessId)
+      void useCustomAlertsStore.getState().fetchAll(businessId)
     }
 
     return () => {
