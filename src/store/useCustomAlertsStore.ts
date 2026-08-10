@@ -1,18 +1,8 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase/client'
+import { sendAlertEmail } from '@/lib/sendAlertEmail'
 import type { ActiveCustomAlert } from '@/lib/finance/calculations'
 import type { CustomAlert } from '@/types/domain'
-
-async function sendAlertEmail(label: string, message: string) {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
-  if (!token) return
-  await fetch('/api/send-alert-email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ subject: `FinanZen: ${label}`, message }),
-  }).catch(() => {})
-}
 
 interface CustomAlertsState {
   alerts: CustomAlert[]
@@ -66,7 +56,7 @@ export const useCustomAlertsStore = create<CustomAlertsState>((set, get) => ({
           .select()
           .single()
         if (data) set({ alerts: get().alerts.map((x) => (x.id === a.id ? (data as CustomAlert) : x)) })
-        if (a.channels.includes('EMAIL')) void sendAlertEmail(a.label, triggered.message)
+        if (a.channels.includes('EMAIL')) void sendAlertEmail(`FinanZen: ${a.label}`, triggered.message)
       } else if (!triggered && a.was_triggered) {
         const { data } = await supabase.from('custom_alerts').update({ was_triggered: false }).eq('id', a.id).select().single()
         if (data) set({ alerts: get().alerts.map((x) => (x.id === a.id ? (data as CustomAlert) : x)) })

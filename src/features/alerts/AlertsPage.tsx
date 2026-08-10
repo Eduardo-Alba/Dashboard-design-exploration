@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Trash2, X } from 'lucide-react'
+import { Mail, Trash2, X } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Toggle } from '@/components/ui/Toggle'
@@ -17,6 +17,7 @@ import { useAccountsStore } from '@/store/useAccountsStore'
 import { useCustomAlertsStore } from '@/store/useCustomAlertsStore'
 import { useUIStore } from '@/store/useUIStore'
 import { evaluateCustomAlerts, type ActiveCustomAlert } from '@/lib/finance/calculations'
+import { sendAlertEmail } from '@/lib/sendAlertEmail'
 import type { AlertConfig } from '@/types/domain'
 
 const ORDER: AlertConfig['type'][] = ['PRESUPUESTO', 'BALANCE', 'MESES_NEG', 'DEUDA', 'INGRESO_BAJO']
@@ -31,6 +32,17 @@ export function AlertsPage() {
   const { alerts: customAlerts, isLoading: customLoading, toggleActive, remove, dismiss } = useCustomAlertsStore()
   const showToast = useUIStore((s) => s.showToast)
   const [formOpen, setFormOpen] = useState(false)
+  const [isSendingTest, setIsSendingTest] = useState(false)
+
+  async function onSendTestEmail() {
+    setIsSendingTest(true)
+    const ok = await sendAlertEmail(
+      'FinanZen: Alerta de prueba',
+      'Esta es una alerta de prueba. Si la recibiste, el envío de correos del módulo de alertas está funcionando correctamente.',
+    )
+    setIsSendingTest(false)
+    showToast(ok ? 'success' : 'error', ok ? 'Correo de prueba enviado' : 'No se pudo enviar el correo de prueba')
+  }
 
   useEffect(() => {
     if (profile) void fetchAll(profile.business_id)
@@ -55,6 +67,16 @@ export function AlertsPage() {
   return (
     <div className="fz-screen flex flex-col gap-4">
       <h1 className="text-xl font-extrabold text-text">Alertas</h1>
+
+      <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-bold text-text">Probar envío de correo</div>
+          <div className="text-[12.5px] text-sec">Manda una alerta de prueba a tu correo para confirmar que el módulo funciona.</div>
+        </div>
+        <Button variant="outline" icon={<Mail size={16} />} disabled={isSendingTest} onClick={onSendTestEmail}>
+          {isSendingTest ? 'Enviando…' : 'Enviar alerta de prueba'}
+        </Button>
+      </Card>
 
       <div>
         <h2 className="mb-2 text-[15px] font-bold text-text">Alertas predeterminadas</h2>
