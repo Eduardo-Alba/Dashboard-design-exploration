@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
+import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { TransactionsPage } from '@/features/transactions/TransactionsPage'
@@ -15,11 +16,6 @@ import { ReportsPage } from '@/features/reports/ReportsPage'
 import { UsersPage } from '@/features/users/UsersPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 
-function HomeRedirect() {
-  const role = useAuthStore((s) => s.profile?.role)
-  return <Navigate to={role === 'CAJERO' ? '/transacciones' : '/dashboard'} replace />
-}
-
 function App() {
   const init = useAuthStore((s) => s.init)
   useEffect(() => init(), [init])
@@ -28,6 +24,7 @@ function App() {
     <ErrorBoundary>
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
           element={
@@ -36,7 +33,6 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<HomeRedirect />} />
           <Route
             path="/dashboard"
             element={

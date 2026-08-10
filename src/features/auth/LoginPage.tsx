@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Wallet as LogoIcon } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { setRememberSession } from '@/lib/supabase/client'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
 
 export function LoginPage() {
+  const navigate = useNavigate()
   const status = useAuthStore((s) => s.status)
   const signIn = useAuthStore((s) => s.signIn)
   const [email, setEmail] = useState('ali@colmado.com')
@@ -95,6 +96,13 @@ export function LoginPage() {
               {isSubmitting ? 'Ingresando…' : 'Iniciar Sesión'}
             </Button>
           </form>
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="mt-4.5 w-full text-center text-[13px] font-semibold text-teal cursor-pointer"
+          >
+            ¿No tienes cuenta? Regístrate
+          </button>
         </div>
         <div className="mt-4.5 text-center text-xs text-ph">Demo: ali@colmado.com · contraseña de prueba (ver README)</div>
       </div>
