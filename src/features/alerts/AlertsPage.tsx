@@ -16,7 +16,7 @@ import { useBudgetsStore } from '@/store/useBudgetsStore'
 import { useAccountsStore } from '@/store/useAccountsStore'
 import { useCustomAlertsStore } from '@/store/useCustomAlertsStore'
 import { useUIStore } from '@/store/useUIStore'
-import { evaluateCustomAlerts } from '@/lib/finance/calculations'
+import { evaluateCustomAlerts, type ActiveCustomAlert } from '@/lib/finance/calculations'
 import type { AlertConfig } from '@/types/domain'
 
 const ORDER: AlertConfig['type'][] = ['PRESUPUESTO', 'BALANCE', 'MESES_NEG', 'DEUDA', 'INGRESO_BAJO']
@@ -39,7 +39,7 @@ export function AlertsPage() {
   const ordered = ORDER.map((type) => configs.find((c) => c.type === type)).filter((c): c is AlertConfig => !!c)
 
   const activeById = useMemo(() => {
-    if (!business) return new Map()
+    if (!business) return new Map<string, ActiveCustomAlert>()
     return new Map(evaluateCustomAlerts(customAlerts, business, transactions, budgets, accounts).map((r) => [r.id, r]))
   }, [business, customAlerts, transactions, budgets, accounts])
 
