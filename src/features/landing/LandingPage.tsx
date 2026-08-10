@@ -1,20 +1,26 @@
 import { Navigate, useNavigate } from 'react-router-dom'
 import { motion, type Variants } from 'framer-motion'
-import { Wallet as LogoIcon } from 'lucide-react'
+import { BarChart3, Bell, LayoutDashboard, Users, Wallet as LogoIcon } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Button } from '@/components/ui/Button'
-import { FloatingOrbs } from './FloatingOrbs'
+import { ProductPreviewCard } from './ProductPreviewCard'
+
+const STEPS = [
+  { number: '01', title: 'Regístrate', description: 'Crea tu cuenta y configura tu negocio en minutos.' },
+  { number: '02', title: 'Registra tus movimientos', description: 'Ingresos y gastos, categorizados, desde cualquier dispositivo.' },
+  { number: '03', title: 'Recibe alertas y reportes', description: 'FinanZen avisa lo importante y arma tus reportes solo.' },
+]
 
 const FEATURES = [
-  { number: '01', title: 'Dashboard en tiempo real', description: 'Saldo, ganancias y últimos movimientos actualizados al instante.' },
-  { number: '02', title: 'Alertas inteligentes', description: 'Predeterminadas o personalizadas, con condiciones a tu medida.' },
-  { number: '03', title: 'Reportes PDF y Excel', description: 'Exporta tus finanzas en un clic, listas para compartir.' },
-  { number: '04', title: 'Multi-usuario con roles', description: 'Admin, Cajero y Contador, cada uno con su propio acceso.' },
+  { icon: LayoutDashboard, title: 'Dashboard en tiempo real', description: 'Saldo, ganancias y últimos movimientos actualizados al instante.' },
+  { icon: Bell, title: 'Alertas inteligentes', description: 'Predeterminadas o personalizadas, con condiciones a tu medida.' },
+  { icon: BarChart3, title: 'Reportes PDF y Excel', description: 'Exporta tus finanzas en un clic, listas para compartir.' },
+  { icon: Users, title: 'Multi-usuario con roles', description: 'Admin, Cajero y Contador, cada uno con su propio acceso.' },
 ]
 
 const heroContainer = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
+  show: { transition: { staggerChildren: 0.1 } },
 } satisfies Variants
 const heroItem = {
   hidden: { opacity: 0, y: 16 },
@@ -39,29 +45,18 @@ export function LandingPage() {
               <span className="text-green">Zen</span>
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <button type="button" onClick={() => navigate('/login')} className="text-[13.5px] font-semibold text-sec cursor-pointer hover:text-text">
-              Iniciar Sesión
-            </button>
-            <Button variant="secondary" onClick={() => navigate('/login')}>
-              Registrarse
-            </Button>
-          </div>
+          <button type="button" onClick={() => navigate('/login')} className="text-[13.5px] font-semibold text-sec cursor-pointer hover:text-text">
+            Iniciar Sesión
+          </button>
         </div>
       </header>
 
-      <section className="relative overflow-hidden">
-        <FloatingOrbs />
-        <motion.div
-          variants={heroContainer}
-          initial="hidden"
-          animate="show"
-          className="mx-auto flex max-w-[880px] flex-col items-center px-6 py-24 text-center md:py-32"
-        >
+      <section className="mx-auto grid max-w-[1080px] grid-cols-1 items-center gap-14 px-6 py-20 md:grid-cols-2 md:py-28">
+        <motion.div variants={heroContainer} initial="hidden" animate="show">
           <motion.p variants={heroItem} className="mb-5 text-[13px] font-bold uppercase tracking-[0.2em] text-teal">
             Gestión Financiera Inteligente
           </motion.p>
-          <motion.h1 variants={heroItem} className="mb-6 text-5xl font-extrabold leading-[0.95] tracking-tight text-text md:text-7xl">
+          <motion.h1 variants={heroItem} className="font-display mb-6 text-5xl leading-[1] font-semibold tracking-tight text-text md:text-6xl">
             Tu negocio,
             <br />
             en números claros.
@@ -69,38 +64,83 @@ export function LandingPage() {
           <motion.p variants={heroItem} className="mb-10 max-w-md text-[15px] text-sec">
             La plataforma financiera para micro y pequeños negocios dominicanos — dashboard, alertas y reportes en un solo lugar.
           </motion.p>
-          <motion.div variants={heroItem} className="flex flex-wrap items-center justify-center gap-3">
-            <Button onClick={() => navigate('/login')}>Iniciar Sesión</Button>
-            <Button variant="outline" onClick={() => navigate('/login')}>
-              Registrarse
-            </Button>
+          <motion.div variants={heroItem} className="flex flex-wrap items-center gap-3">
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+              <Button onClick={() => navigate('/login')}>Iniciar Sesión</Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+              <Button variant="outline" onClick={() => navigate('/login')}>
+                Registrarse
+              </Button>
+            </motion.div>
           </motion.div>
         </motion.div>
+
+        <div className="flex justify-center md:justify-end">
+          <ProductPreviewCard />
+        </div>
       </section>
 
       <section className="mx-auto max-w-[720px] px-6 py-20">
-        {FEATURES.map((f, i) => (
+        <h2 className="font-display mb-10 text-2xl font-semibold text-text">Cómo funciona</h2>
+        {STEPS.map((s, i) => (
           <motion.div
-            key={f.number}
+            key={s.number}
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className={`flex items-baseline gap-6 py-7 ${i > 0 ? 'border-t border-border' : ''}`}
           >
-            <span className="font-mono text-sm font-semibold text-ph">{f.number}</span>
+            <span className="font-mono text-sm font-semibold text-ph">{s.number}</span>
             <div>
-              <div className="text-lg font-bold text-text">{f.title}</div>
-              <div className="mt-1 text-[14px] text-sec">{f.description}</div>
+              <div className="text-lg font-bold text-text">{s.title}</div>
+              <div className="mt-1 text-[14px] text-sec">{s.description}</div>
             </div>
           </motion.div>
         ))}
       </section>
 
-      <section className="border-t border-border py-20 text-center">
-        <h2 className="mb-5 text-2xl font-extrabold tracking-tight text-text md:text-3xl">Empieza a organizar tus finanzas hoy.</h2>
+      <section className="border-t border-border bg-surface/50 py-20">
+        <div className="mx-auto max-w-[1080px] px-6">
+          <h2 className="font-display mb-10 text-2xl font-semibold text-text">Todo lo que necesitas</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {FEATURES.map(({ icon: Icon, title, description }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }}
+                className="flex items-start gap-3.5"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pastel-soft text-green-d">
+                  <Icon size={19} />
+                </div>
+                <div>
+                  <div className="text-[15px] font-bold text-text">{title}</div>
+                  <div className="mt-0.5 text-[13.5px] text-sec">{description}</div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 text-center">
+        <h2 className="font-display mb-5 text-2xl font-semibold tracking-tight text-text md:text-3xl">Empieza a organizar tus finanzas hoy.</h2>
         <Button onClick={() => navigate('/login')}>Iniciar Sesión</Button>
       </section>
+
+      <footer className="border-t border-border px-6 py-8">
+        <div className="mx-auto flex max-w-[1080px] items-center justify-between">
+          <div className="flex items-center gap-2">
+            <LogoIcon className="text-green" size={16} />
+            <span className="text-sm font-bold text-text">FinanZen</span>
+          </div>
+          <span className="text-xs text-ph">© 2026 FinanZen</span>
+        </div>
+      </footer>
     </div>
   )
 }

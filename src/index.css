@@ -71,6 +71,7 @@
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, monospace;
+  --font-display: "Fraunces", serif;
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);
