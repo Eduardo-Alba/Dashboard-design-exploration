@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
-import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/LoginPage'
+
+const LandingPage = lazy(() => import('@/features/landing/LandingPage').then((m) => ({ default: m.LandingPage })))
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { TransactionsPage } from '@/features/transactions/TransactionsPage'
 import { BudgetsPage } from '@/features/budgets/BudgetsPage'
@@ -24,7 +25,14 @@ function App() {
     <ErrorBoundary>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={null}>
+              <LandingPage />
+            </Suspense>
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
         <Route
           element={
