@@ -19,6 +19,11 @@
   --teal: #247575;
   --teal-d: #1f6566;
 
+  /* Wash decorativo para separar secciones (landing): derivado de --green/--bg en vez de un hex
+     fijo, para que siempre tenga contraste contra el fondo del tema activo — --pastel-soft es
+     casi indistinguible de --bg en modo oscuro (ambos muy oscuros), este token no. */
+  --wash: color-mix(in srgb, var(--green) 12%, var(--bg));
+
   --brown: #8b4513;
   --brown-bg: #f5e9d6;
   --warn: #8a5a00;
@@ -89,6 +94,7 @@
   --color-green-strong-hover: var(--green-strong-hover);
   --color-pastel: var(--pastel);
   --color-pastel-soft: var(--pastel-soft);
+  --color-wash: var(--wash);
   --color-teal: var(--teal);
   --color-teal-d: var(--teal-d);
   --color-teal-strong: var(--teal-strong);

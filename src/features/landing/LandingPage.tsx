@@ -53,7 +53,7 @@ export function LandingPage() {
 
       <section
         className="mx-auto grid max-w-[1080px] grid-cols-1 items-center gap-14 px-6 py-20 md:grid-cols-2 md:py-28"
-        style={{ background: 'radial-gradient(1200px 600px at 50% -10%, var(--pastel-soft), var(--bg) 60%)' }}
+        style={{ background: 'radial-gradient(1200px 600px at 50% -10%, var(--wash), var(--bg) 60%)' }}
       >
         <motion.div variants={heroContainer} initial="hidden" animate="show">
           <motion.p variants={heroItem} className="mb-5 text-[13px] font-bold uppercase tracking-[0.2em] text-teal">
@@ -119,7 +119,7 @@ export function LandingPage() {
                 transition={{ duration: 0.5, delay: i * 0.05, ease: 'easeOut' }}
                 className="flex items-start gap-3.5"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pastel-soft text-green-d">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-wash text-green-d">
                   <Icon size={19} />
                 </div>
                 <div>
@@ -132,7 +132,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-pastel-soft/40 py-20 text-center">
+      <section className="bg-wash py-20 text-center">
         <h2 className="font-display mb-5 text-2xl font-semibold tracking-tight text-text md:text-3xl">Empieza a organizar tus finanzas hoy.</h2>
         <Button onClick={() => navigate('/login')}>Iniciar Sesión</Button>
       </section>

@@ -34,7 +34,7 @@ export function ProductPreviewCard() {
 
   return (
     <div className="relative" style={{ perspective: 1200 }}>
-      <div className="absolute inset-0 -z-10 rounded-[28px] bg-[radial-gradient(circle,var(--pastel-soft)_0%,transparent_70%)] blur-2xl" />
+      <div className="absolute inset-0 -z-10 rounded-[28px] bg-[radial-gradient(circle,var(--wash)_0%,transparent_70%)] blur-2xl" />
       <motion.div
         ref={cardRef}
         onPointerMove={onPointerMove}
