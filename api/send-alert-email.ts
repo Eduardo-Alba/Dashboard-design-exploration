@@ -27,13 +27,18 @@ export default async function handler(req: Request): Promise<Response> {
   const { subject, message } = await req.json()
   if (!subject || !message) return new Response(JSON.stringify({ error: 'Datos inválidos.' }), { status: 400 })
 
+  if (!process.env.RESEND_API_KEY) {
+    return new Response(JSON.stringify({ error: 'RESEND_API_KEY no está configurada en el servidor.' }), { status: 500 })
+  }
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: 'FinanZen <onboarding@resend.dev>', to, subject, text: message }),
   })
   if (!res.ok) {
-    return new Response(JSON.stringify({ error: 'No se pudo enviar el correo.' }), { status: 502 })
+    const detail = await res.text().catch(() => '')
+    return new Response(JSON.stringify({ error: 'No se pudo enviar el correo.', to, detail }), { status: 502 })
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
