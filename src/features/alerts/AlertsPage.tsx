@@ -18,6 +18,7 @@ import { useCustomAlertsStore } from '@/store/useCustomAlertsStore'
 import { useUIStore } from '@/store/useUIStore'
 import { evaluateCustomAlerts, type ActiveCustomAlert } from '@/lib/finance/calculations'
 import { sendAlertEmail } from '@/lib/sendAlertEmail'
+import { useAlerts } from '@/hooks/useAlerts'
 import type { AlertConfig } from '@/types/domain'
 
 const ORDER: AlertConfig['type'][] = ['PRESUPUESTO', 'BALANCE', 'MESES_NEG', 'DEUDA', 'INGRESO_BAJO']
@@ -30,19 +31,10 @@ export function AlertsPage() {
   const budgets = useBudgetsStore((s) => s.budgets)
   const accounts = useAccountsStore((s) => s.accounts)
   const { alerts: customAlerts, isLoading: customLoading, toggleActive, remove, dismiss } = useCustomAlertsStore()
+  const { fixed: activeFixed } = useAlerts()
   const showToast = useUIStore((s) => s.showToast)
   const [formOpen, setFormOpen] = useState(false)
   const [isSendingTest, setIsSendingTest] = useState(false)
-
-  async function onSendTestEmail() {
-    setIsSendingTest(true)
-    const ok = await sendAlertEmail(
-      'FinanZen: Alerta de prueba',
-      'Esta es una alerta de prueba. Si la recibiste, el envío de correos del módulo de alertas está funcionando correctamente.',
-    )
-    setIsSendingTest(false)
-    showToast(ok ? 'success' : 'error', ok ? 'Correo de prueba enviado' : 'No se pudo enviar el correo de prueba')
-  }
 
   useEffect(() => {
     if (profile) void fetchAll(profile.business_id)
@@ -54,6 +46,24 @@ export function AlertsPage() {
     if (!business) return new Map<string, ActiveCustomAlert>()
     return new Map(evaluateCustomAlerts(customAlerts, business, transactions, budgets, accounts).map((r) => [r.id, r]))
   }, [business, customAlerts, transactions, budgets, accounts])
+
+  /** Usa una alerta real y actualmente activa como contenido de la prueba (personalizada primero,
+   * si no hay ninguna cae a una predeterminada activa, y si tampoco hay usa un mensaje genérico). */
+  async function onSendTestEmail() {
+    setIsSendingTest(true)
+    const activeCustom = customAlerts.find((a) => {
+      const active = activeById.get(a.id)
+      return a.is_active && !!active && (a.action === 'RECORDAR' || !a.dismissed)
+    })
+    const sample = activeCustom ? activeById.get(activeCustom.id) : undefined
+    const subject = activeCustom ? `FinanZen: ${activeCustom.label}` : activeFixed[0] ? 'FinanZen: Alerta activa' : 'FinanZen: Alerta de prueba'
+    const message = (sample?.message ?? activeFixed[0]?.message)
+      ? `Esta es una alerta real activa en tu negocio ahora mismo:\n\n${sample?.message ?? activeFixed[0]?.message}`
+      : 'No tienes ninguna alerta activa en este momento. Este es un correo de prueba genérico para confirmar que el envío funciona.'
+    const ok = await sendAlertEmail(subject, message)
+    setIsSendingTest(false)
+    showToast(ok ? 'success' : 'error', ok ? 'Correo de prueba enviado' : 'No se pudo enviar el correo de prueba')
+  }
 
   if (isLoading && configs.length === 0) {
     return (
