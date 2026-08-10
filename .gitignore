@@ -16,6 +16,11 @@ dev-dist
 .env.*
 !.env.example
 
+# Skills tooling (npx skills add) — local a esta maquina, no forma parte del repo
+.agents
+.claude
+skills-lock.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
