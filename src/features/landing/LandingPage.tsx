@@ -51,7 +51,10 @@ export function LandingPage() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-[1080px] grid-cols-1 items-center gap-14 px-6 py-20 md:grid-cols-2 md:py-28">
+      <section
+        className="mx-auto grid max-w-[1080px] grid-cols-1 items-center gap-14 px-6 py-20 md:grid-cols-2 md:py-28"
+        style={{ background: 'radial-gradient(1200px 600px at 50% -10%, var(--pastel-soft), var(--bg) 60%)' }}
+      >
         <motion.div variants={heroContainer} initial="hidden" animate="show">
           <motion.p variants={heroItem} className="mb-5 text-[13px] font-bold uppercase tracking-[0.2em] text-teal">
             Gestión Financiera Inteligente
@@ -81,7 +84,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[720px] px-6 py-20">
+      <section className="bg-surface py-20">
+        <div className="mx-auto max-w-[720px] px-6">
         <h2 className="font-display mb-10 text-2xl font-semibold text-text">Cómo funciona</h2>
         {STEPS.map((s, i) => (
           <motion.div
@@ -99,9 +103,10 @@ export function LandingPage() {
             </div>
           </motion.div>
         ))}
+        </div>
       </section>
 
-      <section className="border-t border-border bg-surface/50 py-20">
+      <section className="py-20">
         <div className="mx-auto max-w-[1080px] px-6">
           <h2 className="font-display mb-10 text-2xl font-semibold text-text">Todo lo que necesitas</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -127,12 +132,12 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 text-center">
+      <section className="bg-pastel-soft/40 py-20 text-center">
         <h2 className="font-display mb-5 text-2xl font-semibold tracking-tight text-text md:text-3xl">Empieza a organizar tus finanzas hoy.</h2>
         <Button onClick={() => navigate('/login')}>Iniciar Sesión</Button>
       </section>
 
-      <footer className="border-t border-border px-6 py-8">
+      <footer className="border-t border-border bg-surface px-6 py-8">
         <div className="mx-auto flex max-w-[1080px] items-center justify-between">
           <div className="flex items-center gap-2">
             <LogoIcon className="text-green" size={16} />
